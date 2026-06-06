@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insta Analyse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#16110f;
+    --bg2:#1f1714;
+    --card:#241a16;
+    --ink:#f4ece6;
+    --muted:#a08d82;
+    --line:#3a2c25;
+    --accent:#ff7a4d;
+    --accent2:#ffb547;
+    --good:#5bd6a0;
+    --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(255,122,77,.14), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(255,181,71,.10), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Hanken Grotesk",sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+    padding:24px 18px 80px;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:640px;margin:0 auto;position:relative;z-index:1}
+
+  header{margin-bottom:26px}
+  .eyebrow{
+    font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent2);
+    font-weight:700;margin-bottom:10px;
+  }
+  h1{
+    font-family:"Fraunces",serif;font-weight:900;font-size:clamp(34px,9vw,52px);
+    line-height:.98;letter-spacing:-.02em;
+  }
+  h1 em{font-style:italic;color:var(--accent);font-weight:600}
+  .sub{color:var(--muted);margin-top:12px;font-size:15px;max-width:46ch}
+
+  .tabs{display:flex;gap:8px;margin:26px 0 20px;background:var(--bg2);
+    padding:6px;border-radius:16px;border:1px solid var(--line)}
+  .tab{
+    flex:1;padding:12px 10px;border:none;background:transparent;color:var(--muted);
+    font-family:inherit;font-weight:700;font-size:14px;border-radius:11px;cursor:pointer;
+    transition:.2s;line-height:1.2;
+  }
+  .tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#231009;
+    box-shadow:0 6px 18px -6px rgba(255,122,77,.6)}
+
+  .panel{display:none;animation:fade .35s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .intro{font-size:14px;color:var(--muted);margin-bottom:16px}
+  .intro b{color:var(--ink)}
+
+  .drop{
+    border:1.5px dashed var(--line);border-radius:18px;padding:22px 18px;text-align:center;
+    background:var(--card);cursor:pointer;transition:.2s;margin-bottom:14px;
+  }
+  .drop:hover,.drop.over{border-color:var(--accent);background:#2c1f19}
+  .drop .lbl{font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .drop .hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .drop.filled{border-style:solid;border-color:var(--good)}
+  .drop.filled .lbl{color:var(--good)}
+  .ico{font-size:18px}
+
+  .go{
+    width:100%;padding:16px;border:none;border-radius:16px;cursor:pointer;margin-top:6px;
+    font-family:"Fraunces",serif;font-weight:600;font-size:18px;color:#231009;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    box-shadow:0 10px 30px -10px rgba(255,122,77,.7);transition:.15s;
+  }
+  .go:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+  .go:not(:disabled):active{transform:translateY(2px)}
+
+  .err{color:var(--bad);font-size:13.5px;margin-top:12px;min-height:1px}
+
+  .stats{display:flex;gap:10px;margin:24px 0 8px}
+  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:14px 12px;text-align:center}
+  .stat .n{font-family:"Fraunces",serif;font-weight:900;font-size:26px;line-height:1}
+  .stat .t{font-size:11px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:.08em}
+
+  .results{margin-top:18px}
+  .rhead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;gap:12px}
+  .rhead h2{font-family:"Fraunces",serif;font-size:22px;font-weight:600}
+  .badge{background:var(--accent);color:#231009;font-weight:700;font-size:13px;
+    padding:3px 11px;border-radius:999px}
+  .search{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--bg2);color:var(--ink);font-family:inherit;font-size:14px;margin-bottom:12px}
+  .search::placeholder{color:var(--muted)}
+  .search:focus{outline:none;border-color:var(--accent)}
+
+  ul{list-style:none}
+  li{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:13px;
+    background:var(--card);border:1px solid var(--line);margin-bottom:8px}
+  li .av{width:34px;height:34px;border-radius:50%;flex:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;font-weight:800;color:#231009;font-size:14px}
+  li .u{font-weight:600;font-size:15px;word-break:break-all}
+  li a{margin-left:auto;flex:none;color:var(--accent2);font-weight:700;font-size:13px;
+    text-decoration:none;border:1px solid var(--line);padding:7px 12px;border-radius:10px}
+  li a:active{background:var(--bg2)}
+  .empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:15px}
+  .empty .big{font-size:40px;display:block;margin-bottom:10px}
+
+  details{margin-top:30px;background:var(--bg2);border:1px solid var(--line);border-radius:16px;
+    padding:0 16px}
+  summary{cursor:pointer;font-weight:700;padding:16px 0;font-size:15px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"  ↓";color:var(--accent2)}
+  details[open] summary::after{content:"  ↑"}
+  .guide{padding:0 0 18px;font-size:14px;color:var(--muted)}
+  .guide ol{margin:8px 0 0 18px;display:flex;flex-direction:column;gap:7px}
+  .guide b{color:var(--ink)}
+  .guide code{background:var(--card);padding:1px 6px;border-radius:5px;color:var(--accent2);font-size:13px}
+  .priv{font-size:12.5px;color:var(--muted);text-align:center;margin-top:24px;
+    display:flex;align-items:center;justify-content:center;gap:7px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Instagram · Lokal</div>
+    <h1>Wer folgt dir <em>wirklich?</em></h1>
+    <p class="sub">Lade deinen Instagram-Datenexport hoch und finde heraus, wer dir nicht zurückfolgt – und wer dich entfolgt hat. Alles bleibt auf deinem Gerät.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="back">Folgt nicht zurück</button>
+    <button class="tab" data-tab="unfollow">Entfolger finden</button>
+  </div>
+
+  <!-- TAB 1 -->
+  <section class="panel active" id="back">
+    <p class="intro">Vergleicht, <b>wem du folgst</b> mit <b>wer dir folgt</b>. So siehst du, wer nicht zurückfolgt.</p>
+    <div class="drop" id="d_following">
+      <div class="lbl"><span class="ico">📄</span><span>„Following"-Datei</span></div>
+      <div class="hint">following.json (wem du folgst)</div>
+      <input type="file" hidden multiple accept=".json,.html,.htm">
+    </div>
+    <div class="drop" id="d_followers">
+      <div class="lbl"><span class="ico">📄</span><span>„Followers"-Datei(en)</span></div>
+      <div class="hint">followers_1.json … (wer dir folgt)</div>
+      <input type="file" hidden multiple accept=".json,.html,.htm">
+    </div>
+    <button class="go" id="go_back" disabled>Auswerten</button>
+    <div class="err" id="err_back"></div>
+  </section>
+
+  <!-- TAB 2 -->
+  <section class="panel" id="unfollow">
+    <p class="intro">Vergleicht <b>zwei Follower-Listen von verschiedenen Tagen</b>. Wer in der alten Liste war, aber nicht mehr in der neuen, hat dich entfolgt.</p>
+    <div class="drop" id="d_old">
+      <div class="lbl"><span class="ico">🕰️</span><span>Ältere Followers-Liste</span></div>
+      <div class="hint">der frühere Export</div>
+      <input type="file" hidden multiple accept=".json,.html,.htm">
+    </div>
+    <div class="drop" id="d_new">
+      <div class="lbl"><span class="ico">✨</span><span>Neuere Followers-Liste</span></div>
+      <div class="hint">der aktuelle Export</div>
+      <input type="file" hidden multiple accept=".json,.html,.htm">
+    </div>
+    <button class="go" id="go_unfollow" disabled>Vergleichen</button>
+    <div class="err" id="err_unfollow"></div>
+    <p class="intro" style="margin-top:14px;font-size:12.5px">Tipp: Du brauchst zwei Exporte zu unterschiedlichen Zeitpunkten. Mach jetzt einen und in ein paar Wochen den nächsten.</p>
+  </section>
+
+  <!-- RESULTS -->
+  <div class="results" id="results" style="display:none">
+    <div class="stats" id="stats"></div>
+    <div class="rhead">
+      <h2 id="rtitle"></h2>
+      <span class="badge" id="rcount"></span>
+    </div>
+    <input class="search" id="search" placeholder="Nach Nutzername suchen …">
+    <ul id="list"></ul>
+  </div>
+
+  <details>
+    <summary>So bekommst du deinen Datenexport</summary>
+    <div class="guide">
+      <ol>
+        <li>In der Instagram-App: <b>Profil → Menü (☰) → Aktivität deiner Kontoinformationen</b> bzw. <b>Einstellungen → Kontenencenter → Deine Informationen und Berechtigungen</b>.</li>
+        <li>Wähle <b>Informationen herunterladen → Download anfordern</b>.</li>
+        <li>Bei „Informationen" wähle gezielt <b>Follower und Abonnierte</b> (Followers and following).</li>
+        <li>Format: <b><code>JSON</code></b> wählen (funktioniert am besten), Zeitraum „Gesamte Zeit".</li>
+        <li>Instagram schickt dir per Mail einen Download-Link. Entpacke die ZIP-Datei.</li>
+        <li>Du findest darin <code>following.json</code> und <code>followers_1.json</code> (im Ordner <i>connections/followers_and_following</i>).</li>
+      </ol>
+    </div>
+  </details>
+
+  <p class="priv">🔒 100 % lokal — nichts wird hochgeladen oder gespeichert.</p>
+</div>
+
+<script>
+(function(){
+  const store = {}; // id -> Map(lower -> display)
+
+  function $(s){return document.querySelector(s)}
+  function $all(s){return document.querySelectorAll(s)}
+
+  // ---- Datei -> Nutzernamen (Map lower->display) ----
+  function parseContent(text){
+    const map = new Map();
+    let data=null;
+    try{ data = JSON.parse(text); }catch(e){ data=null; }
+    if(data!==null){
+      walk(data, map);
+    } else {
+      // HTML-Fallback
+      const re = /instagram\.com\/([A-Za-z0-9._]+)/g; let m;
+      const skip = new Set(['p','reel','reels','explore','stories','accounts','direct','about','legal','privacy','tv']);
+      while((m=re.exec(text))){
+        const u=m[1]; if(!skip.has(u.toLowerCase())) add(map,u);
+      }
+    }
+    return map;
+  }
+  function add(map,val){
+    if(!val) return;
+    const v=String(val).trim(); if(!v) return;
+    const k=v.toLowerCase();
+    if(!map.has(k)) map.set(k,v);
+  }
+  function walk(node,map){
+    if(Array.isArray(node)){ node.forEach(n=>walk(n,map)); return; }
+    if(node && typeof node==='object'){
+      if(Array.isArray(node.string_list_data)){
+        node.string_list_data.forEach(s=>{
+          if(s && s.value) add(map,s.value);
+          else if(s && s.href){ const mm=String(s.href).match(/instagram\.com\/([A-Za-z0-9._]+)/); if(mm) add(map,mm[1]); }
+        });
+      }
+      for(const v of Object.values(node)){ if(v && typeof v==='object') walk(v,map); }
+    }
+  }
+
+  function readFiles(files){
+    return Promise.all([...files].map(f=>new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>res(r.result);
+      r.onerror=()=>rej(f.name);
+      r.readAsText(f);
+    }))).then(texts=>{
+      const map=new Map();
+      texts.forEach(t=>{ for(const [k,v] of parseContent(t)) if(!map.has(k)) map.set(k,v); });
+      return map;
+    });
+  }
+
+  // ---- Datei-Felder verkabeln ----
+  function wireDrop(id, key, onReady){
+    const el=$('#'+id), input=el.querySelector('input');
+    el.addEventListener('click',()=>input.click());
+    ['dragover','dragenter'].forEach(e=>el.addEventListener(e,ev=>{ev.preventDefault();el.classList.add('over')}));
+    ['dragleave','drop'].forEach(e=>el.addEventListener(e,ev=>{ev.preventDefault();el.classList.remove('over')}));
+    el.addEventListener('drop',ev=>{ if(ev.dataTransfer.files.length){ handle(ev.dataTransfer.files); }});
+    input.addEventListener('change',()=>{ if(input.files.length) handle(input.files); });
+    function handle(files){
+      readFiles(files).then(map=>{
+        store[key]=map;
+        const n=map.size, names=[...files].map(f=>f.name).join(', ');
+        el.classList.add('filled');
+        el.querySelector('.lbl span:last-child').textContent='✓ '+n+' Konten geladen';
+        el.querySelector('.hint').textContent=names;
+        onReady();
+      }).catch(name=>{ alert('Konnte „'+name+'" nicht lesen.'); });
+    }
+  }
+
+  const checkBack=()=>{ $('#go_back').disabled=!(store.following && store.followers); };
+  const checkUnf=()=>{ $('#go_unfollow').disabled=!(store.old && store.new); };
+
+  wireDrop('d_following','following',checkBack);
+  wireDrop('d_followers','followers',checkBack);
+  wireDrop('d_old','old',checkUnf);
+  wireDrop('d_new','new',checkUnf);
+
+  // ---- Tabs ----
+  $all('.tab').forEach(t=>t.addEventListener('click',()=>{
+    $all('.tab').forEach(x=>x.classList.remove('active'));
+    $all('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    $('#'+t.dataset.tab).classList.add('active');
+    $('#results').style.display='none';
+  }));
+
+  // ---- Auswertung ----
+  function diff(aMap,bMap){ // in a, nicht in b
+    const out=[];
+    for(const [k,v] of aMap) if(!bMap.has(k)) out.push(v);
+    return out.sort((x,y)=>x.toLowerCase().localeCompare(y.toLowerCase()));
+  }
+
+  $('#go_back').addEventListener('click',()=>{
+    $('#err_back').textContent='';
+    const following=store.following, followers=store.followers;
+    if(following.size===0||followers.size===0){
+      $('#err_back').textContent='Eine der Dateien enthält keine Konten. Prüfe, ob du die richtige JSON-Datei gewählt hast.';
+      return;
+    }
+    const notBack=diff(following,followers);
+    let mutual=0; for(const k of following.keys()) if(followers.has(k)) mutual++;
+    showStats([
+      ['Du folgst',following.size],
+      ['Folgen dir',followers.size],
+      ['Gegenseitig',mutual],
+    ]);
+    render('Folgt dir nicht zurück', notBack, '🎉','Alle, denen du folgst, folgen dir zurück!');
+  });
+
+  $('#go_unfollow').addEventListener('click',()=>{
+    $('#err_unfollow').textContent='';
+    const o=store.old, n=store.new;
+    if(o.size===0||n.size===0){
+      $('#err_unfollow').textContent='Eine der Dateien enthält keine Konten. Prüfe die Auswahl.';
+      return;
+    }
+    const lost=diff(o,n);
+    const gained=diff(n,o);
+    showStats([
+      ['Damals',o.size],
+      ['Jetzt',n.size],
+      ['Neu dazu',gained.length],
+    ]);
+    render('Hat dich entfolgt', lost, '💛','Niemand hat dich entfolgt – alles stabil!');
+  });
+
+  function showStats(rows){
+    $('#stats').innerHTML=rows.map(r=>`<div class="stat"><div class="n">${r[1]}</div><div class="t">${r[0]}</div></div>`).join('');
+  }
+
+  let current=[];
+  function render(title,arr,emptyIcon,emptyMsg){
+    current=arr;
+    $('#results').style.display='block';
+    $('#rtitle').textContent=title;
+    $('#rcount').textContent=arr.length;
+    $('#search').value='';
+    paint(arr,emptyIcon,emptyMsg);
+    $('#results').scrollIntoView({behavior:'smooth',block:'start'});
+    $('#search').oninput=()=>{
+      const q=$('#search').value.trim().toLowerCase();
+      paint(arr.filter(u=>u.toLowerCase().includes(q)),'🔍','Kein Treffer.');
+    };
+  }
+  function paint(arr,icon,msg){
+    const list=$('#list');
+    if(arr.length===0){ list.innerHTML=`<div class="empty"><span class="big">${icon}</span>${msg}</div>`; return; }
+    list.innerHTML=arr.map(u=>`<li>
+      <span class="av">${(u[0]||'?').toUpperCase()}</span>
+      <span class="u">@${u}</span>
+      <a href="https://instagram.com/${encodeURIComponent(u)}" target="_blank" rel="noopener">Profil</a>
+    </li>`).join('');
+  }
+})();
+</script>
+</body>
+</html>
